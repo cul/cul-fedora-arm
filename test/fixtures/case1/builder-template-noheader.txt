@@ -1,0 +1,4 @@
+0	collection:1;ac:5	/test-0001.xml	MODS		ContentAggregator	AC:P:5001	
+1	0			/01-Northover_IPD_SovDebt_Working_Paper.pdf	Resource		http://creativecommons.org/licenses/by-nc-nd/3.0/us/
+4	collection:1;ac:5	/test-0002.xml	MODS		ContentAggregator	AC:P:5002	
+5	4			/02-851.pdf	Resource		http://creativecommons.org/licenses/by-nc-nd/3.0/us/

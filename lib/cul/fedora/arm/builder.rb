@@ -33,6 +33,7 @@ module Cul
 
         # creates a Builder object. Can be used with no arguments, or with ONE of the following options
         # [:template]:: builds parts based on an enumerable list of strings (for example, the result of File.open) 
+        # [:header]:: designates for a template whether a header is specified
         def initialize(*args)
           options = args.extract_options!
 
@@ -40,11 +41,20 @@ module Cul
 
           # TODO: add file option to avoid :template => File.open(file_name,"r")
           
-          if template = options.delete(:template)
-            parse_template(template)
+          if (template = options.delete(:template)) || (file = options.delete(:file))
+            template ||= File.open(file,"r")
+
+            header = options.delete(:header) 
+            header = true if header.nil?
+
+            raise ArgumentError, "arguments should only include one of the following: :template, :file" unless options.empty?
+            
+            parse_template(template, header)
+          else
+            
+            raise ArgumentError, "arguments should only include one of the following: :template, :file" unless options.empty?
           end
           
-          raise ArgumentError, "arguments should only include one of the following: :template" unless options.empty?
         end
 
         # adds one part to the parts array
@@ -83,27 +93,17 @@ module Cul
         
         # parses an enumerable of strings to build parts
         # an optional header row specifies the columns, however sequence must be included and must be first
-        def parse_template(template)
-          header_columns = []     # list of columns
-          custom_header = false   # indicates whether a header_row was used
+        # TODO: fix this to include a header option
+        def parse_template(template, has_header_row)
+          header_columns = DEFAULT_TEMPLATE_HEADER     # list of columns
           
           
           template.each_with_index do |line, i|
           
             # if first row, check for header
             if i == 0
-          
-              # assumes that if the first character is a letter, this is a header row, otherwise, use default_columns
-              case line.to_s
-              when /^[0-9]/
-                header_columns = DEFAULT_TEMPLATE_HEADER
-              when /^\w/
-                custom_header = true
-                header_columns = line.split("\t").collect { |cn| cn.strip.underscore.to_sym }
-                raise "First column of custom designed headers must be sequence" unless header_columns[0] == :sequence
-              end
+              header_columns = line.split("\t").collect { |cn| cn.strip.underscore.to_sym } if has_header_row
               
-
               # check to make sure all mandatory columns are in the template
               missing_mandatory_columns = MANDATORY_COLUMNS.select { |c| !header_columns.include?(c) }
               raise "Missing mandatory column(s) found: #{missing_mandatory_columns.join(",")}" unless missing_mandatory_columns.empty?
@@ -111,7 +111,7 @@ module Cul
               test_for_invalid_columns(header_columns)
 
               # skip header_row
-              next if custom_header
+              next if has_header_row
 
             end
             

@@ -28,7 +28,7 @@ Gem::Specification.new do |s|
      "lib/cul/fedora/arm/builder.rb",
      "test/cul_fedora_arm_builder_test.rb",
      "test/factories.rb",
-     "test/factories/cul_fedora_arm_builder_factory.rb",
+     "test/fixtures/case1/builder-template-noheader.txt",
      "test/fixtures/case1/builder-template.txt",
      "test/helpers/template_builder.rb",
      "test/test_helper.rb"
@@ -40,7 +40,6 @@ Gem::Specification.new do |s|
   s.summary = %q{Tools for dealing with Cul ARM specification}
   s.test_files = [
     "test/cul_fedora_arm_builder_test.rb",
-     "test/factories/cul_fedora_arm_builder_factory.rb",
      "test/factories.rb",
      "test/helpers/template_builder.rb",
      "test/test_helper.rb"
@@ -54,14 +53,17 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<thoughtbot-shoulda>, [">= 0"])
       s.add_development_dependency(%q<thoughtbot-factory_girl>, [">= 0"])
       s.add_runtime_dependency(%q<activesupport>, [">= 0"])
+      s.add_runtime_dependency(%q<ruby-fedora>, [">= 0"])
     else
       s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
       s.add_dependency(%q<thoughtbot-factory_girl>, [">= 0"])
       s.add_dependency(%q<activesupport>, [">= 0"])
+      s.add_dependency(%q<ruby-fedora>, [">= 0"])
     end
   else
     s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
     s.add_dependency(%q<thoughtbot-factory_girl>, [">= 0"])
     s.add_dependency(%q<activesupport>, [">= 0"])
+    s.add_dependency(%q<ruby-fedora>, [">= 0"])
   end
 end

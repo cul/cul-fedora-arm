@@ -25,16 +25,33 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
     
     
     should "have a list of mandatory, valid, and required columns" do
+      assert_instance_of  Array, @builder_class::REQUIRED_COLUMNS
+
       assert_equal @builder_class::REQUIRED_COLUMNS, [:sequence]
       assert_equal @builder_class::MANDATORY_COLUMNS, [:sequence, :aggregate_under, :metadata]
       assert_equal @builder_class::VALID_COLUMNS, [:sequence, :aggregate_under, :metadata, :metadata_type, :content, :content_type, :id, :license]
     end
     
-    should "accept only options :template" do
+    should "accept only options :template or :file" do
+      assert_instance_of @builder_class, @builder_class.new(:template => nil)
+      assert_instance_of @builder_class, @builder_class.new(:file => nil)
+
       assert_raise(ArgumentError) do
         @builder_class.new(:template => nil, :invalid => true)
       end
+
+      assert_raise(ArgumentError) do
+        @builder_class.new(:template => "test", :file => "test")
+      end
+
     end
+
+    should "not accept :header without :template" do
+      assert_raise(ArgumentError) do
+        @builder_class.new(:header => true)
+      end
+    end
+
 
     context "given a blank builder" do
       setup do
@@ -56,11 +73,12 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
       end
       
       should "not add parts with the same sequence id" do
-
+        
         assert_raise(RuntimeError, "Sequence ID already taken") do
           @builder.add_part(:sequence => "2", :metadata => "/test-0001.xml")
-          @builder.add_part(:sequence => "2", :metadata => "/test-0001.xml")
+          @builder.add_part(:sequence => "2", :metadata => "/test-0002.xml")
         end
+        
       end
     end
 
@@ -82,12 +100,6 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
         end
       end
       
-      should "insist on sequence being the first column" do
-        assert_raise RuntimeError, "First column of custom designed headers must be sequence" do
-          @builder_class.new(:template => template_builder(@sequence_not_first))
-        end
-      end
-      
       should "reject invalid column names" do
         assert_raise RuntimeError, "Invalid column name: random"  do
           @builder_class.new(:template => template_builder(@invalid_column))
@@ -103,14 +115,26 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
     
     context "with an example template with header" do
       setup do
-        @builder = @builder_class.new(:template => File.open("test/fixtures/case1/builder-template.txt", "r"))
+        @builder = @builder_class.new(:file => "test/fixtures/case1/builder-template.txt")
+        @builder_via_template_option = @builder_class.new(:template => File.open("test/fixtures/case1/builder-template.txt", "r"))
+        @builder_no_header = @builder_class.new(:file => "test/fixtures/case1/builder-template-noheader.txt", :header => false)
       end
       
       should "load successfully" do
         assert_instance_of @builder_class, @builder
+        assert_instance_of @builder_class, @builder_no_header
       end
       
-      should "ignore the header and load template data successfully" do
+      should "have equivalent results for header and no_header instances of the default column set" do
+        assert_equal @builder.parts, @builder_no_header.parts
+      end
+
+      should "have equivalent results for opening via template and file" do
+        assert_equal @builder.parts, @builder_via_template_option.parts
+      end
+
+      
+      should "ignore the header row and load template data successfully" do
         assert_equal @builder.parts.length, 4
         assert_equal @builder.parts[0][:metadata],  "/test-0001.xml"
         assert_equal @builder.parts[3][:license],  "http://creativecommons.org/licenses/by-nc-nd/3.0/us/"
@@ -121,6 +145,7 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
         assert_equal @builder.parts[3], @builder.part_by_sequence("5")
       end
     end
+    
   end
   
   
