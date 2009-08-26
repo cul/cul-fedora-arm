@@ -1,5 +1,16 @@
 = cul-fedora-arm
 
+This is designed, given an input specification referring to several metadata and resource files, create and ingest objects into a Fedora reposito
+
+== Input 
+
+The input consists of a specification of relationships and metadata that can be given in one of three ways:
+* A file name
+* An enumerable array of strings
+* A series of FILL IN objects
+
+=== Input Specification
+
 Description goes here.
 
 == Note on Patches/Pull Requests

@@ -5,12 +5,14 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "cul-fedora-arm"
-    gem.summary = %Q{Tools for dealing with CulCore ARM specification}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{Tools for dealing with Cul ARM specification}
+    gem.description = %Q{Tools for dealing with Cul ARM specification}
     gem.email = "tastyhat@jamesstuart.org"
     gem.homepage = "http://github.com/tastyhat/cul-fedora-arm"
     gem.authors = ["James Stuart"]
     gem.add_development_dependency "thoughtbot-shoulda"
+    gem.add_development_dependency "thoughtbot-factory_girl"
+    gem.add_dependency "activesupport"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
 rescue LoadError
