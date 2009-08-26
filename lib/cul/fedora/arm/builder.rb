@@ -24,7 +24,9 @@ module Cul
         end
 
 
-        def add_part(value_hash)
+        def add_part(*args)
+          value_hash = args.extract_options!
+          
           test_for_invalid_columns(value_hash.keys)
           test_for_required_columns(value_hash)
           
