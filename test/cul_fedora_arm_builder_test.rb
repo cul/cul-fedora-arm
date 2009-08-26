@@ -36,6 +36,34 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
       end
     end
 
+    context "given a blank builder" do
+      setup do
+        @builder = @builder_class.new        
+      end
+      
+      should "have a blank array of parts" do
+        assert_equal @builder.parts, []
+      end
+      
+      should "be able to add parts" do
+        @builder.add_part(:sequence => "0", :aggregate_under => "collection:1;ac:5", :metadata => "/test-0001.xml")
+      end
+
+      should "not add parts without a sequence" do
+        assert_raise RuntimeError, "Missing required values sequence" do
+          @builder.add_part(:aggregate_under => "collection:1;ac:5", :metadata => "/test-0001.xml")
+        end
+      end
+      
+      should "not add parts with the same sequence id" do
+
+        assert_raise(RuntimeError, "Sequence ID already taken") do
+          @builder.add_part(:sequence => "2", :metadata => "/test-0001.xml")
+          @builder.add_part(:sequence => "2", :metadata => "/test-0001.xml")
+        end
+      end
+    end
+
     context "given headers for templates" do
       setup do
         @good_header = %w{sequence aggregateUnder metadata metadataType content contentType id}
@@ -89,8 +117,8 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
       end
 
       should "have parts accessible by sequence id" do
-        assert_kind_of Hash, @builder.part_by_sequence(5)
-        assert_equal @builder.parts[3], @builder.part_by_sequence(5)
+        assert_kind_of Hash, @builder.part_by_sequence("5")
+        assert_equal @builder.parts[3], @builder.part_by_sequence("5")
       end
     end
   end

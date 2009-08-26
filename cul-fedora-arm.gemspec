@@ -23,7 +23,14 @@ Gem::Specification.new do |s|
      "README.rdoc",
      "Rakefile",
      "VERSION",
+     "cul-fedora-arm.gemspec",
      "lib/cul-fedora-arm.rb",
+     "lib/cul/fedora/arm/builder.rb",
+     "test/cul_fedora_arm_builder_test.rb",
+     "test/factories.rb",
+     "test/factories/cul_fedora_arm_builder_factory.rb",
+     "test/fixtures/case1/builder-template.txt",
+     "test/helpers/template_builder.rb",
      "test/test_helper.rb"
   ]
   s.homepage = %q{http://github.com/tastyhat/cul-fedora-arm}

@@ -24,26 +24,24 @@ module Cul
         end
 
 
-        def add_part(columns, values)
-          test_for_invalid_columns(columns)
-          
-          value_hash = Hash[*columns.zip(values).flatten]
+        def add_part(value_hash)
+          test_for_invalid_columns(value_hash.keys)
           test_for_required_columns(value_hash)
           
           raise "Sequence ID already taken" if part_by_sequence(value_hash[:sequence])
           
-          @parts << value_hash unless values.empty?
+          @parts << value_hash
         end
         
         def part_by_sequence(sequence_id)
-          @parts.detect { |p| p[:sequence] == sequence_id.to_s}
+          @parts.detect { |p| p[:sequence] == sequence_id}
         end
         
         protected
         
         def test_for_required_columns(value_hash)
           missing_values = REQUIRED_COLUMNS.select { |col| !value_hash.has_key?(col) || value_hash[col].nil? }
-          raise "Missing required values for #{missing_values.join(",")}" unless missing_values.empty?
+          raise "Missing required values #{missing_values.join(",")}" unless missing_values.empty?
         end
         
         def test_for_invalid_columns(columns)
@@ -75,8 +73,8 @@ module Cul
               next if custom_header
 
             end
-            
-            add_part(header_columns, line.split("\t").collect(&:strip))
+            value_hash = Hash[*header_columns.zip(line.split("\t").collect(&:strip)).flatten]
+            add_part(value_hash)
           end
           
           header_columns
