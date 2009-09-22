@@ -1,5 +1,4 @@
 
-
 module Cul
   module Fedora
     module Arm
@@ -15,30 +14,48 @@ module Cul
         # TODO: abstract this to allow for multiple patterns
         
         # list of columns for a template with no header row
-        DEFAULT_TEMPLATE_HEADER = [:sequence, :aggregate_under, :metadata, :metadata_type, :content, :content_type, :id, :license]
+        DEFAULT_TEMPLATE_HEADER = [:sequence, :target, :model_type, :source, :template_type, :dc_format, :id, :pid, :action, :license]
         
         # columns that must have values
         REQUIRED_COLUMNS = [:sequence]
         
         # columns that must be included in a template
-        MANDATORY_COLUMNS = [:sequence, :aggregate_under, :metadata]
+        MANDATORY_COLUMNS = [:sequence, :target, :model_type]
         
         # list of columns which may have values
-        VALID_COLUMNS = [:sequence, :aggregate_under, :metadata, :metadata_type, :content, :content_type, :id, :license]
+        VALID_COLUMNS = [:sequence, :target, :model_type, :source, :template_type, :dc_format, :id, :pid, :action, :license]
 
-
+        FOXML_BUILDER = FoxmlBuilder.new()
         # array of individual hash: each hash corresponds to a metadata or resource.
+        
         attr_reader :parts
         
 
         # creates a Builder object. Can be used with no arguments, or with ONE of the following options
         # [:template]:: builds parts based on an enumerable list of strings (for example, the result of File.open) 
         # [:header]:: designates for a template whether a header is specified
+        # and one or more of the following:
+        # [:host]:: designates a fedora host server name
+        # [:port]:: designates a fedora host port
+        # [:user]:: designates a fedora user
+        # [:pwd]:: designates a fedora user credential
         def initialize(*args)
           options = args.extract_options!
 
           @parts = []
-
+          host = options.delete(:host)
+          port = options.delete(:port)
+          user = options.delete(:user)
+          pwd = options.delete(:pwd)
+          @namespace = options.delete(:ns)
+          if(host and port)
+            @endpoint = "http://#{host}:#{port}/fedora/services/management"
+            wsdl = "http://#{host}:#{port}/fedora/wsdl?api=API-M"
+            @apim = SOAP::WSDLDriverFactory.new(wsdl).create_rpc_driver
+            if (user and pwd)
+              @apim.options["protocol.http.basic_auth"]<<[@endpoint,user,pwd]
+            end
+          end
           # TODO: add file option to avoid :template => File.open(file_name,"r")
           
           if (template = options.delete(:template)) || (file = options.delete(:file))
@@ -75,13 +92,95 @@ module Cul
         def part_by_sequence(sequence_id)
           @parts.detect { |p| p[:sequence] == sequence_id}
         end
+        # looks for a part by :pid key
+        def part_by_pid(pid)
+          @parts.detect { |p| p[:pid] == pid}
+        end
         
+        def purge(pid)
+          if(@apim)
+            purge = Tasks::PurgeTask.new(pid)
+            purge.post(@apim)
+          end
+        end
+        
+        def process_parts()
+          reserve_pids(parts)
+          parts.each { |part|
+            process(part)
+          }
+        end
+        
+        def process(value_hash)
+          # part is a hash
+          op = value_hash[:action] + "_" + value_hash[:model_type]
+          op.downcase!
+          op = op.intern
+          raise "Unknown operation #{op}" unless method(op)
+          return method(op).call(value_hash) 
+        end
+        
+        def insert_aggregator(value_hash)
+          data = FOXML_BUILDER.build(value_hash)
+          task = Tasks::InsertFoxmlTask.new(data)
+          return task.post(@apim)
+        end
+       
+        def reserve_pids(parts=@parts)
+          assigned = []
+          if (parts.nil?)
+            return assigned
+          end
+          missing = 0
+          # count missing pids
+          parts.each { |part|
+            test_for_required_columns(part)
+            if ( part[:action].strip().eql?('insert'))
+              if ( !part.has_key?(:pid) or part[:pid].strip().empty?)
+                missing += 1
+              end
+            end
+          }
+          task = Tasks::ReservePidsTask.new(missing,@namespace)
+          task.post(@apim)
+          pids = task.response.pid
+          # assign new pids
+          parts.each { |part|
+            if ( part[:action].strip().eql?('insert'))
+              if ( !part.has_key?(:pid) or part[:pid].strip().empty?)
+                part[:pid] = pids.delete_at(0)
+                assigned.push(part[:pid])
+              end
+            end
+          }
+          # make substitutions in target values
+          parts.each { |part|
+            if(part.has_key?(:target))
+              target = part[:target]
+              targets = target.split(';')
+              targets.collect! { |t|
+                if (t =~ /^\d+$/)
+                  t = part_by_sequence(t)[:pid]
+                end
+                t
+              }
+              part[:target] = targets.join(';')
+            end
+          }
+          assigned
+        end
+
+
+
         protected
         
 
         # checks keys of a hash to make sure all elements of REQUIRED_COLUMNS are contained. 
         def test_for_required_columns(value_hash)
           missing_values = REQUIRED_COLUMNS.select { |col| !value_hash.has_key?(col) || value_hash[col].nil? }
+          if (value_hash.has_key?(:action) and value_hash[:action].eql?('update'))
+            raise "Update operations require a PID" unless (value_hash.has_key(:pid) and !value_hash[:pid].strip().eql?(''))
+          end
           raise "Missing required values #{missing_values.join(",")}" unless missing_values.empty?
         end
         
@@ -119,12 +218,10 @@ module Cul
             value_hash = Hash[*header_columns.zip(line.split("\t").collect(&:strip)).flatten]
             add_part(value_hash)
           end
-          
           parts
         end
-        
-        
       end
     end
   end
+
 end
