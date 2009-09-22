@@ -1,3 +1,5 @@
+require "cul/fedora/arm/foxml_builder"
 require "cul/fedora/arm/builder"
+require "cul/fedora/arm/tasks"
 require "activesupport"
 require "ruby-fedora"

@@ -1,5 +1,7 @@
-sequence	aggregateUnder	metadata	metadataType	content	contentType	id	license
-0	collection:1;ac:5	/test-0001.xml	MODS		ContentAggregator	AC:P:5001	
-1	0			/01-Northover_IPD_SovDebt_Working_Paper.pdf	Resource		http://creativecommons.org/licenses/by-nc-nd/3.0/us/
-4	collection:1;ac:5	/test-0002.xml	MODS		ContentAggregator	AC:P:5002	
-5	4			/02-851.pdf	Resource		http://creativecommons.org/licenses/by-nc-nd/3.0/us/
+sequence	target	model_type	source	template_type	dc_format	id	pid	action	license
+0	collection:1;ac:5	Aggregator		Content	InteractiveResource	AC:P:5001		insert	license:by-nc-nd
+1	0	Resource	/01-Northover_IPD_SovDebt_Working_Paper.pdf		Text			insert	license:by-nc-nd
+2	0	Metadata	/test-0001.xml	MODS	Text			insert	license:by-nc-nd
+4	collection:1;ac:5	Aggregator		Content	InteractiveResource	AC:P:5002		insert	license:by-nc-nd
+6	4	Metadata	/test-0002.xml	MODS	Text			insert	license:by-nc-nd
+7	4	Resource	/02-851.pdf		Text			insert	license:by-nc-nd

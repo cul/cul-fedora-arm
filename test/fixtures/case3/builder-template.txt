@@ -1,0 +1,3 @@
+sequence	target	model_type	source	template_type	dc_format	id	pid	action	license
+0	collection:1;ac:5	Aggregator		Content	InteractiveResource	AC:P:5001		insert	license:by-nc-nd
+1	collection:1;ac:5	Aggregator		StaticImage	Image	jay.columbia.1		insert	license:by-nc-nd

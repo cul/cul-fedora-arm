@@ -20,7 +20,7 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
     end
 
     should "have a default array of columns for templates without headers" do
-      assert_equal @builder_class::DEFAULT_TEMPLATE_HEADER, [:sequence, :aggregate_under, :metadata, :metadata_type, :content, :content_type, :id, :license]
+      assert_equal @builder_class::DEFAULT_TEMPLATE_HEADER, [:sequence, :target, :model_type, :source, :template_type, :dc_format, :id, :pid, :action, :license]
     end
     
     
@@ -28,8 +28,8 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
       assert_instance_of  Array, @builder_class::REQUIRED_COLUMNS
 
       assert_equal @builder_class::REQUIRED_COLUMNS, [:sequence]
-      assert_equal @builder_class::MANDATORY_COLUMNS, [:sequence, :aggregate_under, :metadata]
-      assert_equal @builder_class::VALID_COLUMNS, [:sequence, :aggregate_under, :metadata, :metadata_type, :content, :content_type, :id, :license]
+      assert_equal @builder_class::MANDATORY_COLUMNS, [:sequence, :target, :model_type]
+      assert_equal @builder_class::VALID_COLUMNS, [:sequence, :target, :model_type, :source, :template_type, :dc_format, :id, :pid, :action, :license]
     end
     
     should "accept only options :template or :file" do
@@ -63,20 +63,20 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
       end
       
       should "be able to add parts" do
-        @builder.add_part(:sequence => "0", :aggregate_under => "collection:1;ac:5", :metadata => "/test-0001.xml")
+        @builder.add_part(:sequence => "0", :target => "collection:1;ac:5", :source => "/test-0001.xml", :model_type => "Metadata")
       end
 
       should "not add parts without a sequence" do
         assert_raise RuntimeError, "Missing required values sequence" do
-          @builder.add_part(:aggregate_under => "collection:1;ac:5", :metadata => "/test-0001.xml")
+          @builder.add_part(:target => "collection:1;ac:5", :source => "/test-0001.xml")
         end
       end
       
       should "not add parts with the same sequence id" do
         
         assert_raise(RuntimeError, "Sequence ID already taken") do
-          @builder.add_part(:sequence => "2", :metadata => "/test-0001.xml")
-          @builder.add_part(:sequence => "2", :metadata => "/test-0002.xml")
+          @builder.add_part(:sequence => "2", :source => "/test-0001.xml", :model_type => "Metadata")
+          @builder.add_part(:sequence => "2", :source => "/test-0002.xml", :model_type => "Metadata")
         end
         
       end
@@ -84,10 +84,10 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
 
     context "given headers for templates" do
       setup do
-        @good_header = %w{sequence aggregateUnder metadata metadataType content contentType id}
-        @invalid_column = %w{sequence aggregateUnder metadata random}
-        @sequence_not_first = %w{aggregateUnder metadata sequence}
-        @missing_mandatory = %w{sequence aggregateUnder metadataType}
+        @good_header = %w{sequence target model_type source template_type dc_format id}
+        @invalid_column = %w{sequence target model_type random}
+        @sequence_not_first = %w{target model_type sequence}
+        @missing_mandatory = %w{sequence target template_type}
       end
 
       should "accept good headers" do
@@ -126,7 +126,10 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
       end
       
       should "have equivalent results for header and no_header instances of the default column set" do
-        assert_equal @builder.parts, @builder_no_header.parts
+        @builder.parts.each{|part|
+          assert_equal part, @builder_no_header.part_by_sequence(part[:sequence])
+        }
+        assert_equal @builder.parts.length, @builder_no_header.parts.length
       end
 
       should "have equivalent results for opening via template and file" do
@@ -135,19 +138,89 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
 
       
       should "ignore the header row and load template data successfully" do
-        assert_equal @builder.parts.length, 4
-        assert_equal @builder.parts[0][:metadata],  "/test-0001.xml"
-        assert_equal @builder.parts[3][:license],  "http://creativecommons.org/licenses/by-nc-nd/3.0/us/"
+        assert_equal @builder.parts.length, 6
+        assert_equal @builder.parts[2][:source],  "/test-0001.xml"
+        assert_equal @builder.parts[3][:license],  "license:by-nc-nd"
       end
 
       should "have parts accessible by sequence id" do
-        assert_kind_of Hash, @builder.part_by_sequence("5")
-        assert_equal @builder.parts[3], @builder.part_by_sequence("5")
+        assert_kind_of Hash, @builder.part_by_sequence("6")
+        assert_equal @builder.parts[4], @builder.part_by_sequence("6")
       end
     end
     
+  context "with an example template with header, and fedora credentials" do
+    setup do
+      args = {:file => "test/fixtures/case1/builder-template.txt",:user=>'fedoraAdmin',:pwd=>'fedoarPassword',:host=>'127.0.0.1',:port=>'8080'}
+      @builder = @builder_class.new(args)
+      @builder_via_template_option = @builder_class.new(:template => File.open("test/fixtures/case1/builder-template.txt", "r"))
+      @builder_no_header = @builder_class.new(:file => "test/fixtures/case1/builder-template-noheader.txt", :header => false)
+    end
+    
+    should "load successfully" do
+      assert_instance_of @builder_class, @builder
+      assert_instance_of @builder_class, @builder_no_header
+    end
+    
+    should "have equivalent results for header and no_header instances of the default column set" do
+      @builder.parts.each{|part|
+        assert_equal part, @builder_no_header.part_by_sequence(part[:sequence])
+      }
+      assert_equal @builder.parts.length, @builder_no_header.parts.length
+    end
+
+    should "have equivalent results for opening via template and file" do
+      assert_equal @builder.parts, @builder_via_template_option.parts
+    end
+
+    
+    should "ignore the header row and load template data successfully" do
+      assert_equal @builder.parts.length, 6
+      assert_equal @builder.parts[2][:source],  "/test-0001.xml"
+      assert_equal @builder.parts[3][:license],  "license:by-nc-nd"
+    end
+
+    should "have parts accessible by sequence id" do
+      assert_kind_of Hash, @builder.part_by_sequence("6")
+      assert_equal @builder.parts[4], @builder.part_by_sequence("6")
+    end
+
+    should "be able to procure PIDs for parts in sequence" do
+      @builder.reserve_pids()
+      @builder.parts.each { |part|
+        assert part.has_key?(:pid)
+        assert !(part[:pid].empty?)
+        assert_match /^\w+:\d+$/, part[:pid]
+        targets = part[:target].split(';')
+        targets.each {|target|
+          assert_no_match /^\d+$/, target
+          }
+        }
+      end
+    end
+    context "with example input with header for two inserted aggregators, and fedora credentials" do
+      setup do
+        @host = '127.0.0.1'
+        @port = 8080
+        args = {:file => "test/fixtures/case2/builder-template.txt",:user=>'user',:pwd=>'pwd',:host=>@host,:port=>@port}
+        @builder = @builder_class.new(args)
+        @builder_via_template_option = @builder_class.new(:template => File.open("test/fixtures/case1/builder-template.txt", "r"))
+      end
+      should "be able to ingest aggregators into repository" do
+        # do ingest
+        @assigned = @builder.reserve_pids()  
+        @builder.process_parts()
+        # get objects, verify properties
+      end
+      teardown do
+        # purge objects
+        if (@assigned)
+          @assigned.each {|pid|
+            @builder.purge(pid)
+          }
+        end
+      end
+    end
   end
-  
-  
-end
+  end
 
