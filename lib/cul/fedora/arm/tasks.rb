@@ -17,7 +17,14 @@ module Cul
             @args = {}
           end
           def post(driver)
+            if (@apim.nil?)
+              raise "Missing APIM SOAPAction name"
+            end
+            if (@args.empty?)
+              raise "No soap arguments"    
+            end
             @response = driver.method(@apim).call(@args) unless (@apim.nil? or @args.empty?)
+            @response
           end
         end # Task
         class PurgeTask < Task
@@ -42,8 +49,9 @@ module Cul
             @apim = :ingest
           end
           def post(driver)
-            super(driver)
+            response = super(driver)
             @pid = @response[:pid]
+            response
           end
         end
         class InsertFoxmlTask < InsertTask

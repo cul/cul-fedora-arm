@@ -1,11 +1,23 @@
 require 'test_helper'
-require 'test/helpers/soap_inputs'
-
+require 'net/http'
 
 class CulFedoraArmTasksTest < Test::Unit::TestCase
+  def initialize(test_method_name)
+    super(test_method_name)
+    @local = {}
+    File.open('../test/local.properties','r').each {|line|
+      line.strip!
+      if (line.index('#').nil? or line.index('#') != 0)
+        ix = line.index('=')
+        if (ix)
+          @local[line[0...ix].intern] = line[ix+1..-1]
+        end
+      end
+    }
+  end
   context "test next pid(s) reservation task on localhost" do
     setup do
-      @driver = getSOAPDriver("127.0.0.1","8080",'user','pwd')
+      @driver = getSOAPDriver(@local[:host],@local[:port],@local[:user],@local[:pwd])
       @numPids = 3
       @ns = "test"
       @task = Cul::Fedora::Arm::Tasks::ReservePidsTask.new(@numPids,@ns)
@@ -26,17 +38,18 @@ class CulFedoraArmTasksTest < Test::Unit::TestCase
       @expectedOutput
     end
   end
-  context "test DC metadata update" do
+  context "test DC metadata update against local host" do
     setup do
-      @driver = getSOAPDriver("127.0.0.1","8080",'fedoraAdmin','fedoarPassword')
-      src = "/var/tmp/foo.dc.xml"
-      @expectedInput = sprintf(METADATA_DC_TEST, src)
-      @task = Cul::Fedora::Arm::Tasks::UpdateDCTask.new("ldpd:1",@expectedInput)
-      @expectedOutput
+      @pid = 'ldpd:1'
+      @driver = getSOAPDriver(@local[:host],@local[:port],@local[:user],@local[:pwd])      
+      @src = DateTime.new().strftime("dublincore-%Y%m%dT%H%M%S.xml")
+      @expectedInput = sprintf(METADATA_DC_TEST, @src)
+      @task = Cul::Fedora::Arm::Tasks::UpdateDCTask.new(@pid,@expectedInput)
     end
     should "match expected SOAP output" do
       assert_nothing_raised [(response = @task.post(@driver))] do
-        puts response
+        puts "nothing raised? " + response
+        puts response.body
       end
       modifiedDate = DateTime.parse(response.modifiedDate)
       now = DateTime.new()
@@ -44,7 +57,8 @@ class CulFedoraArmTasksTest < Test::Unit::TestCase
       assert diff < 2 # assert that the update time was within a couple of seconds
     end
     should "have updated the datastream correctly" do
-      
+      response = Net::HTTP.new(@local[:host],@local[:port]).get("/fedora/get/#{@pid}/DC")
+      assert response.body.rindex("<dc:source>#{@src}</dc:source>")
     end
   end
   def getSOAPDriver(host,port,user,pwd)

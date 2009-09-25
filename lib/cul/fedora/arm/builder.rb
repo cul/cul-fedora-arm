@@ -106,8 +106,8 @@ module Cul
         
         def process_parts()
           reserve_pids(parts)
-          parts.each { |part|
-            process(part)
+          parts.each { |part_hash|
+            process(part_hash)
           }
         end
         
@@ -123,7 +123,14 @@ module Cul
         def insert_aggregator(value_hash)
           data = FOXML_BUILDER.build(value_hash)
           task = Tasks::InsertFoxmlTask.new(data)
-          return task.post(@apim)
+          task.post(@apim)
+          task.response
+        end
+        def insert_metadata(value_hash)
+          raise "Unimplemented"
+        end
+        def insert_resource(value_hash)
+          raise "Unimplemented"
         end
        
         def reserve_pids(parts=@parts)
@@ -143,7 +150,7 @@ module Cul
           }
           task = Tasks::ReservePidsTask.new(missing,@namespace)
           task.post(@apim)
-          pids = task.response.pid
+          pids = (missing == 1)? [task.response.pid]:task.response.pid
           # assign new pids
           parts.each { |part|
             if ( part[:action].strip().eql?('insert'))

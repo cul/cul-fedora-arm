@@ -188,15 +188,19 @@ RESOURCE
         }
         METADATA_FOR = "<cul:metadataFor rdf:resource=\"info:fedora/%s\" />"
         MEMBER_OF = "<cul:memberOf rdf:resource=\"info:fedora/%s\" />"
+        UTF8_MARKER = "\xEF\xBB\xBF"
         def build(value_hash)
           template_type = value_hash[:template_type]
           model_type = value_hash[:model_type]
           value_default_key = (template_type.downcase + "_" + model_type.downcase).intern
           subs = {}
-          if(DEFAULTS.has_key?(template_key))
+          if(DEFAULTS.has_key?(value_default_key))
             subs = value_hash.merge(DEFAULTS[value_default_key])
             now  = Time.now
             subs[:timestamp] = now.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+            subs[:rels] = build_rels(subs)
+          else
+            subs = value_hash.merge({:timestamp=>Time.now.strftime("%Y-%m-%dT%H:%M:%S.000Z")})
             subs[:rels] = build_rels(subs)
           end
           template_key = model_type.downcase.intern
@@ -224,7 +228,10 @@ RESOURCE
             data = template.gsub(/\{0\[(\w+)\]\}/) {|match|
               value_hash[$1.intern]
             }
-            puts data
+            data.strip!
+            if (data.index(UTF8_MARKER) == 0)
+              data.slice!(0...UTF8_MARKER.length)
+            end
             data
         end
       end

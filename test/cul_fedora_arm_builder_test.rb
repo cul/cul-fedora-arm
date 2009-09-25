@@ -1,9 +1,25 @@
 require 'test_helper'
-require 'test/helpers/template_builder'
 
 
 class CulFedoraArmBuilderTest < Test::Unit::TestCase
-  
+  TEST = '../test'
+  CASE1 = "#{TEST}/fixtures/case1"
+  CASE2 = "#{TEST}/fixtures/case2"
+  CASE3 = "#{TEST}/fixtures/case3"
+  CASE4 = "#{TEST}/fixtures/case4"
+  def initialize(test_method_name)
+    super(test_method_name)
+    @local = {}
+    File.open("#{TEST}/local.properties",'r').each {|line|
+      line.strip!
+      if (line.index('#').nil? or line.index('#') != 0)
+        ix = line.index('=')
+        if (ix)
+          @local[line[0...ix].intern] = line[ix+1..-1]
+        end
+      end
+    }
+  end  
   context "The builder class" do
     setup do
       @builder_class = Cul::Fedora::Arm::Builder
@@ -115,9 +131,9 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
     
     context "with an example template with header" do
       setup do
-        @builder = @builder_class.new(:file => "test/fixtures/case1/builder-template.txt")
-        @builder_via_template_option = @builder_class.new(:template => File.open("test/fixtures/case1/builder-template.txt", "r"))
-        @builder_no_header = @builder_class.new(:file => "test/fixtures/case1/builder-template-noheader.txt", :header => false)
+        @builder = @builder_class.new(:file => "#{CASE1}/builder-template.txt")
+        @builder_via_template_option = @builder_class.new(:template => File.open("#{CASE1}/builder-template.txt", "r"))
+        @builder_no_header = @builder_class.new(:file => "#{CASE1}/builder-template-noheader.txt", :header => false)
       end
       
       should "load successfully" do
@@ -151,10 +167,10 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
     
   context "with an example template with header, and fedora credentials" do
     setup do
-      args = {:file => "test/fixtures/case1/builder-template.txt",:user=>'fedoraAdmin',:pwd=>'fedoarPassword',:host=>'127.0.0.1',:port=>'8080'}
+      args = {:file => "#{CASE1}/builder-template.txt"}.merge(@local)
       @builder = @builder_class.new(args)
-      @builder_via_template_option = @builder_class.new(:template => File.open("test/fixtures/case1/builder-template.txt", "r"))
-      @builder_no_header = @builder_class.new(:file => "test/fixtures/case1/builder-template-noheader.txt", :header => false)
+      @builder_via_template_option = @builder_class.new(:template => File.open("#{CASE1}/builder-template.txt", "r"))
+      @builder_no_header = @builder_class.new(:file => "#{CASE1}/builder-template-noheader.txt", :header => false)
     end
     
     should "load successfully" do
@@ -200,27 +216,120 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
     end
     context "with example input with header for two inserted aggregators, and fedora credentials" do
       setup do
-        @host = '127.0.0.1'
-        @port = 8080
-        args = {:file => "test/fixtures/case2/builder-template.txt",:user=>'user',:pwd=>'pwd',:host=>@host,:port=>@port}
+        args = {:file => "#{CASE2}/builder-template.txt",:ns=>'test'}.merge(@local)
         @builder = @builder_class.new(args)
-        @builder_via_template_option = @builder_class.new(:template => File.open("test/fixtures/case1/builder-template.txt", "r"))
+        @builder_via_template_option = @builder_class.new(:template => File.open("#{CASE1}/builder-template.txt", "r"))
       end
       should "be able to ingest aggregators into repository" do
         # do ingest
         @assigned = @builder.reserve_pids()  
-        @builder.process_parts()
+        if (@assigned)
+            @assigned.each {|pid|
+                assert @builder.part_by_pid(pid), "Could not find part assigned to #{pid}"
+            }          
+        end
+        response = @builder.process_parts()
+        
         # get objects, verify properties
+        if (@assigned)
+          http = Net::HTTP.start(@local[:host],@local[:port])
+          @assigned.each { |pid| 
+            resp = http.head("/fedora/get/#{pid}/DC")
+            assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+          }
+          http.finish()
+        end
       end
       teardown do
         # purge objects
         if (@assigned)
           @assigned.each {|pid|
-            @builder.purge(pid)
+            begin
+              @builder.purge(pid)
+            rescue Exception=>e
+              puts "Error purging #{pid}: #{e}"
+            end
           }
         end
       end
     end
+context "with example input with header for an inserted metadata, and fedora credentials" do
+  setup do
+    args = {:file => "#{CASE4}/builder-template.txt",:ns=>'test'}.merge(@local)
+    @builder = @builder_class.new(args)
+    @builder_via_template_option = @builder_class.new(:template => File.open("#{CASE4}/builder-template.txt", "r"))
   end
+  should "be able to ingest metadata objects into repository" do
+    # do ingest
+    @assigned = @builder.reserve_pids()  
+    if (@assigned)
+        @assigned.each {|pid|
+            assert @builder.part_by_pid(pid), "Could not find part assigned to #{pid}"
+        }          
+    end
+    response = @builder.process_parts()
+    
+    # get objects, verify properties
+    if (@assigned)
+      http = Net::HTTP.start(@local[:host],@local[:port])
+      @assigned.each { |pid| 
+        resp = http.head("/fedora/get/#{pid}/DC")
+        assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+      }
+      http.finish()
+    end
   end
-
+  teardown do
+    # purge objects
+    if (@assigned)
+      @assigned.each {|pid|
+        begin
+          @builder.purge(pid)
+        rescue Exception=>e
+          puts "Error purging #{pid}: #{e}"
+        end
+      }
+    end
+  end
+end
+context "with example input with header for an inserted resource, and fedora credentials" do
+  setup do
+    args = {:file => "#{CASE3}/builder-template.txt",:ns=>'test'}.merge(@local)
+    @builder = @builder_class.new(args)
+    @builder_via_template_option = @builder_class.new(:template => File.open("#{CASE3}/builder-template.txt", "r"))
+  end
+  should "be able to ingest resource objects into repository" do
+    # do ingest
+    @assigned = @builder.reserve_pids()  
+    if (@assigned)
+        @assigned.each {|pid|
+            assert @builder.part_by_pid(pid), "Could not find part assigned to #{pid}"
+        }          
+    end
+    response = @builder.process_parts()
+    
+    # get objects, verify properties
+    if (@assigned)
+      http = Net::HTTP.start(@local[:host],@local[:port])
+      @assigned.each { |pid| 
+        resp = http.head("/fedora/get/#{pid}/DC")
+        assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+      }
+      http.finish()
+    end
+  end
+  teardown do
+    # purge objects
+    if (@assigned)
+      @assigned.each {|pid|
+        begin
+          @builder.purge(pid)
+        rescue Exception=>e
+          puts "Error purging #{pid}: #{e}"
+        end
+      }
+    end
+  end
+end
+    end
+end
