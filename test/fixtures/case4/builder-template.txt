@@ -1,0 +1,2 @@
+sequence	target	model_type	source	template_type	dc_format	id	pid	action	license
+0	test:1	Metadata	%s	MODS	Text			insert	license:by-nc-nd
