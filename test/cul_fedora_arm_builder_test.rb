@@ -1,5 +1,5 @@
 require 'test_helper'
-
+require 'digest/md5'
 
 class CulFedoraArmBuilderTest < Test::Unit::TestCase
   TEST = '../test'
@@ -10,7 +10,7 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
   def initialize(test_method_name)
     super(test_method_name)
     @local = {}
-    File.open("#{TEST}/local.properties",'r').each {|line|
+    File.open(ENV['PROPERTIES'],'r').each {|line|
       line.strip!
       if (line.index('#').nil? or line.index('#') != 0)
         ix = line.index('=')
@@ -255,7 +255,17 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
     end
 context "with example input with header for an inserted metadata, and fedora credentials" do
   setup do
-    args = {:file => "#{CASE4}/builder-template.txt",:ns=>'test'}.merge(@local)
+    infile_path = "#{CASE4}/builder-template.txt"
+    b = binding
+    template = File.open(infile_path) {|f|
+      f.readlines().collect{ |line|
+        line.gsub(/\#\{(\w+)\}/) {|match|
+           eval($1, b)
+        }
+      }
+      
+    }
+    args = {:template => template,:ns=>'test'}.merge(@local)
     @builder = @builder_class.new(args)
     @builder_via_template_option = @builder_class.new(:template => File.open("#{CASE4}/builder-template.txt", "r"))
   end
@@ -273,8 +283,14 @@ context "with example input with header for an inserted metadata, and fedora cre
     if (@assigned)
       http = Net::HTTP.start(@local[:host],@local[:port])
       @assigned.each { |pid| 
-        resp = http.head("/fedora/get/#{pid}/DC")
+        resp = http.get("/fedora/get/#{pid}/CONTENT")
         assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+        eTitle = "<title>test record title</title>"
+        assert resp.body.index(eTitle), "did not find expected mods title tag #{eTitle} in #{pid}/CONTENT"
+        resp = http.get("/fedora/get/#{pid}/DC")
+        assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+        eTitle = "<dc:title>test record title</dc:title>"
+        assert resp.body.index(eTitle), "did not find expected title tag #{eTitle} in #{pid}/DC"
       }
       http.finish()
     end
@@ -294,7 +310,17 @@ context "with example input with header for an inserted metadata, and fedora cre
 end
 context "with example input with header for an inserted resource, and fedora credentials" do
   setup do
-    args = {:file => "#{CASE3}/builder-template.txt",:ns=>'test'}.merge(@local)
+    infile_path = "#{CASE3}/builder-template.txt"
+    b = binding
+    template = File.open(infile_path) {|f|
+      f.readlines().collect{ |line|
+        line.gsub(/\#\{(\w+)\}/) {|match|
+           eval($1, b)
+        }
+      }
+      
+    }
+    args = {:template => template,:ns=>'test'}.merge(@local)
     @builder = @builder_class.new(args)
     @builder_via_template_option = @builder_class.new(:template => File.open("#{CASE3}/builder-template.txt", "r"))
   end
@@ -313,9 +339,24 @@ context "with example input with header for an inserted resource, and fedora cre
       http = Net::HTTP.start(@local[:host],@local[:port])
       @assigned.each { |pid| 
         resp = http.head("/fedora/get/#{pid}/DC")
-        assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+        assert_equal "200", resp.code,  "#{pid}/DC not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+        resp = http.get("/fedora/get/#{pid}/CONTENT")
+        assert_equal "200", resp.code,  "#{pid}/CONTENT not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+        actual = resp.body
+        begin
+          expected = File.open(@builder.part_by_pid(pid)[:source],'rb')
+          a_digest = Digest::MD5.hexdigest(actual)
+          e_digest = Digest::MD5.hexdigest(expected.read())
+          assert_equal e_digest, a_digest
+        ensure
+          expected.close()
+        end
+        resp = http.get("/fedora/get/#{pid}/RELS-EXT")
+        assert_equal "200", resp.code,  "#{pid}/RELS-EXT not loaded correctly to repo at #{@local[:host]}:#{@local[:port]}... #{resp.code} #{resp.message} "
+        rels = resp.body
+        assert rels.index("<dcmi:extent>15138</dcmi:extent>") > -1
+        http.finish()
       }
-      http.finish()
     end
   end
   teardown do

@@ -23,10 +23,12 @@ module Cul
           GIF = [0x47,0x49,0x46,0x38] # "GIF8"
           # 8 byte signatures
           PNG = [0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]
+          
           def analyze_image(file_name, debug=false)
             result = {}
             file = nil
             file_size = 0
+            begin
             if (file_name.index("http://") == 0)
               temp_file = Tempfile.new("image-download")
               #download the url content, write to tempfile
@@ -63,11 +65,38 @@ module Cul
               }
               puts "\nUnmatched header bytes: " + msg
             end
-            file.close()
+        ensure
+          file.close() if file
+        end
             # return hash
             result
           end
-          
+  
+  def map_image_properties(att_hash)
+    result = []
+    if (att_hash.has_key?(:size))
+      result.push(sprintf(SIZE_TEMPLATE,att_hash[:size]))
+    end
+    if (att_hash.has_key?(:width))
+      result.push(sprintf(WIDTH_TEMPLATE,att_hash[:width]))
+    end
+    if (att_hash.has_key?(:length))
+      result.push(sprintf(LENGTH_TEMPLATE,att_hash[:length]))
+    end
+    if (att_hash.has_key?(:x_sampling))
+      result.push(sprintf(YSAMPLING_TEMPLATE,att_hash[:x_sampling]))
+    end
+    if (att_hash.has_key?(:y_sampling))
+      result.push(sprintf(YSAMPLING_TEMPLATE,att_hash[:y_sampling]))
+    end
+    if (att_hash.has_key?(:sampling_unit) and UNITS.has_key?(att_hash[:sampling_unit]))
+      result.push(UNITS[att_hash[:sampling_unit]]) 
+    end
+    result
+  end
+  
+  protected
+            
           def analyze_gif(file,debug)
             props = {}
             header = file.read(13)
@@ -315,29 +344,7 @@ module Cul
             end
             result
           end
-          
-          def map_image_properties(att_hash)
-            result = []
-            if (att_hash.has_key?(:size))
-              result.push(sprintf(SIZE_TEMPLATE,att_hash[:size]))
-            end
-            if (att_hash.has_key?(:width))
-              result.push(sprintf(WIDTH_TEMPLATE,att_hash[:width]))
-            end
-            if (att_hash.has_key?(:length))
-              result.push(sprintf(LENGTH_TEMPLATE,att_hash[:length]))
-            end
-            if (att_hash.has_key?(:x_sampling))
-              result.push(sprintf(YSAMPLING_TEMPLATE,att_hash[:x_sampling]))
-            end
-            if (att_hash.has_key?(:y_sampling))
-              result.push(sprintf(YSAMPLING_TEMPLATE,att_hash[:y_sampling]))
-            end
-            if (att_hash.has_key?(:sampling_unit))
-              result.push(UNITS[att_hash[:sampling_unit]]) unless UNITS[att_hash[:sampling_unit]].nil?
-            end
-            
-          end
+
         end  
     end  
 end

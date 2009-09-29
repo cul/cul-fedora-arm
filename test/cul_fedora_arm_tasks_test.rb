@@ -5,7 +5,7 @@ class CulFedoraArmTasksTest < Test::Unit::TestCase
   def initialize(test_method_name)
     super(test_method_name)
     @local = {}
-    File.open('../test/local.properties','r').each {|line|
+    File.open(ENV['PROPERTIES'],'r').each {|line|
       line.strip!
       if (line.index('#').nil? or line.index('#') != 0)
         ix = line.index('=')
@@ -24,8 +24,6 @@ class CulFedoraArmTasksTest < Test::Unit::TestCase
     end
     should "return expected output when executed" do
       assert_nothing_raised [(response = @task.post(@driver))] do
-      #  raise "execution output comparison not implemented"
-        puts response.pid
       end
       assert_equal @numPids, response.pid.length
       response.pid.each {|p| assert_equal 0, p.index(@ns)}
@@ -48,8 +46,6 @@ class CulFedoraArmTasksTest < Test::Unit::TestCase
     end
     should "match expected SOAP output" do
       assert_nothing_raised [(response = @task.post(@driver))] do
-        puts "nothing raised? " + response
-        puts response.body
       end
       modifiedDate = DateTime.parse(response.modifiedDate)
       now = DateTime.new()

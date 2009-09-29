@@ -1,2 +1,2 @@
 sequence	target	model_type	source	template_type	dc_format	id	pid	action	license
-0	test:1	Resource	%s	Image	Image			insert	license:by-nc-nd
+0	test:1	Resource	#{CASE3}/test001.jpg	Image	Image			insert	license:by-nc-nd

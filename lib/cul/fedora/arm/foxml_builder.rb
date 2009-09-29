@@ -1,3 +1,7 @@
+require 'cul/fedora/image/image'
+require 'pathname'
+require 'rexml/document'
+require 'uri'
 module Cul
   module Fedora
     module Arm
@@ -122,7 +126,7 @@ RESOURCE_FOXML = <<RESOURCE
           <dc:creator>BATCH</dc:creator>
           <dc:publisher>Columbia University Libraries</dc:publisher>
           <dc:type>{0[dc_type]}</dc:type>
-          <dc:format>{0[mime_type]}</dc:format>
+          <dc:format>{0[mime]}</dc:format>
           <dc:identifier>{0[pid]}</dc:identifier>
           <dc:source>{0[src]}</dc:source>
         </oai_dc:dc>
@@ -152,9 +156,9 @@ RESOURCE_FOXML = <<RESOURCE
       </foxml:xmlContent>
     </foxml:datastreamVersion>
   </foxml:datastream>
-  <foxml:datastream CONTROL_GROUP="M" ID="CONTENT" STATE="A" VERSIONABLE="true">
+  <foxml:datastream CONTROL_GROUP="{0[datastream_type]}" ID="CONTENT" STATE="A" VERSIONABLE="true">
     <foxml:datastreamVersion CREATED="{0[timestamp]}"
-      ID="CONTENT.0" LABEL="{0[title_attr]}" MIMETYPE="{0[mime_type]}">
+      ID="CONTENT.0" LABEL="{0[title_attr]}" MIMETYPE="{0[mime]}">
       <foxml:contentLocation
         REF="{0[source]}" TYPE="INTERNAL_ID"/>
     </foxml:datastreamVersion>
@@ -165,6 +169,7 @@ RESOURCE
 
 
       class FoxmlBuilder
+        include Cul::Fedora::Image
         STATIC_IMAGE_DEFAULTS = {
           :content_model => 'ldpd:StaticImageAggregator',
           :title => 'Image Aggregator',
@@ -177,9 +182,20 @@ RESOURCE
           :title_attr => 'Generic Content Aggregator',
           :dc_type => 'InteractiveResource',
         }
+        METADATA_DEFAULTS = {
+          :content_model => 'ldpd:MODSMetadata',
+          :dc_type => 'Text',
+          :dc_format => 'text/xml'
+        }
+        RESOURCE_DEFAULTS = {
+          :content_model => 'ldpd:Resource'
+        }
         DEFAULTS = {
           :staticimage_aggregator => STATIC_IMAGE_DEFAULTS,
-          :content_aggregator => CONTENT_DEFAULTS
+          :content_aggregator => CONTENT_DEFAULTS,
+          :metadata => METADATA_DEFAULTS,
+          :image_resource => RESOURCE_DEFAULTS,
+          :resource => RESOURCE_DEFAULTS
         }
         TEMPLATES = {
           :aggregator => Cul::Fedora::Arm::AGGREGATOR_FOXML,
@@ -189,7 +205,8 @@ RESOURCE
         METADATA_FOR = "<cul:metadataFor rdf:resource=\"info:fedora/%s\" />"
         MEMBER_OF = "<cul:memberOf rdf:resource=\"info:fedora/%s\" />"
         UTF8_MARKER = "\xEF\xBB\xBF"
-        def build(value_hash)
+        
+        def build(value_hash)         
           template_type = value_hash[:template_type]
           model_type = value_hash[:model_type]
           value_default_key = (template_type.downcase + "_" + model_type.downcase).intern
@@ -203,6 +220,22 @@ RESOURCE
             subs = value_hash.merge({:timestamp=>Time.now.strftime("%Y-%m-%dT%H:%M:%S.000Z")})
             subs[:rels] = build_rels(subs)
           end
+          if (subs.has_key?(:source))
+            subs[:source].strip!
+            if(subs[:source].length > 0)
+              if (subs[:source].index('http:') != 0)
+                if(subs[:model_type].eql?('Metadata'))
+                  subs[:metadata] = File.open(subs[:source]){|file| file.read() }
+                  subs.merge!(parse_mods(subs[:metadata]))
+                end
+                subs[:source] = 'file:/' + Pathname.new(subs[:source]).realpath
+                subs[:datastream_type] = 'E'
+              else
+                subs[:datastream_type] = 'M'
+              end
+            end
+          end
+
           template_key = model_type.downcase.intern
           if(TEMPLATES.has_key?(template_key))
             return sub_values(subs,TEMPLATES[template_key])
@@ -211,6 +244,25 @@ RESOURCE
           end
         end
         protected
+        
+        def parse_mods(data)
+          # attempt to assign title/title_attr and identifier
+          result = {}
+            xml = REXML::Document.new(data)
+            element = xml.elements["/mods/titleInfo/title"]
+            if (element)
+              result[:title] = element.text
+              result[:title_attr] = URI.escape(element.text)
+            end
+            element = xml.elements["/mods/recordInfo/recordIdentifier"]
+            if (element)
+              result[:identifier] = element.text
+            elsif (element = xml.elements["/mods/identifier"])
+              result[:identifier] = element.text
+            end
+          result
+        end
+        
         def build_rels(value_hash)
           if (value_hash[:target].nil?)
             return ''
@@ -221,6 +273,14 @@ RESOURCE
           targets.each {|target|
             rels += sprintf(tmp,target)
           }
+          if (value_hash[:model_type].eql?('Resource') and not value_hash[:dc_format].index('Image').nil?)
+            image_props = analyze_image(value_hash[:source])
+            value_hash[:mime] = image_props[:mime] 
+            image_rels = map_image_properties(image_props)
+            image_rels.each {|rel|
+              rels += rel
+            }
+          end
           rels
         end
 

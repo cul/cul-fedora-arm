@@ -127,10 +127,16 @@ module Cul
           task.response
         end
         def insert_metadata(value_hash)
-          raise "Unimplemented"
+          data = FOXML_BUILDER.build(value_hash)
+          task = Tasks::InsertFoxmlTask.new(data)
+          task.post(@apim)
+          task.response
         end
         def insert_resource(value_hash)
-          raise "Unimplemented"
+          data = FOXML_BUILDER.build(value_hash)
+          task = Tasks::InsertFoxmlTask.new(data)
+          task.post(@apim)
+          task.response
         end
        
         def reserve_pids(parts=@parts)

@@ -59,7 +59,7 @@ context "image library given a JPEG" do
     @expected
   end
   should "correctly identify properties" do
-    actual = analyze_image(@src,true)
+    actual = analyze_image(@src,false)
     actual
     assert_equal @expected, actual
   end
