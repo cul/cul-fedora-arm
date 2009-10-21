@@ -16,14 +16,14 @@ module Cul
             @apim = nil
             @args = {}
           end
-          def post(driver)
+          def post(connector)
             if (@apim.nil?)
               raise "Missing APIM SOAPAction name"
             end
             if (@args.empty?)
               raise "No soap arguments"    
             end
-            @response = driver.method(@apim).call(@args) unless (@apim.nil? or @args.empty?)
+            @response = connector.apim_call(@apim, @args) unless (@apim.nil? or @args.empty?)
             @response
           end
         end # Task

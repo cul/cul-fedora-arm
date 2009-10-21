@@ -5,22 +5,56 @@
 
 Gem::Specification.new do |s|
   s.name = %q{cul-fedora-arm}
-  s.version = "0.4.0"
+  s.version = "0.5.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["James Stuart"]
-  s.date = %q{2009-09-29}
+  s.date = %q{2009-10-21}
   s.description = %q{Tools for dealing with Cul ARM specification}
   s.email = %q{tastyhat@jamesstuart.org}
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc"
   ]
-  s.has_rdoc = true
+  s.files = [
+    ".buildpath",
+     ".document",
+     ".gitignore",
+     ".loadpath",
+     ".project",
+     "LICENSE",
+     "README.rdoc",
+     "Rakefile",
+     "VERSION",
+     "cul-fedora-arm.gemspec",
+     "lib/cul-fedora-arm.rb",
+     "lib/cul/fedora/arm/builder.rb",
+     "lib/cul/fedora/arm/foxml_builder.rb",
+     "lib/cul/fedora/arm/tasks.rb",
+     "lib/cul/fedora/image/image.rb",
+     "test/cul_fedora_arm_builder_test.rb",
+     "test/cul_fedora_arm_tasks_test.rb",
+     "test/cul_fedora_image_test.rb",
+     "test/factories.rb",
+     "test/fixtures/case1/builder-template-noheader.txt",
+     "test/fixtures/case1/builder-template.txt",
+     "test/fixtures/case2/builder-template.txt",
+     "test/fixtures/case3/builder-template.txt",
+     "test/fixtures/case3/test001.bmp",
+     "test/fixtures/case3/test001.gif",
+     "test/fixtures/case3/test001.jpg",
+     "test/fixtures/case3/test001.png",
+     "test/fixtures/case3/test001.tiff",
+     "test/fixtures/case4/builder-template.txt",
+     "test/fixtures/case4/test-mods.xml",
+     "test/helpers/soap_inputs.rb",
+     "test/helpers/template_builder.rb",
+     "test/test_helper.rb"
+  ]
   s.homepage = %q{http://github.com/tastyhat/cul-fedora-arm}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
-  s.rubygems_version = %q{1.3.1}
+  s.rubygems_version = %q{1.3.5}
   s.summary = %q{Tools for dealing with Cul ARM specification}
   s.test_files = [
     "test/cul_fedora_arm_builder_test.rb",
@@ -34,7 +68,7 @@ Gem::Specification.new do |s|
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
-    s.specification_version = 2
+    s.specification_version = 3
 
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<thoughtbot-shoulda>, [">= 0"])

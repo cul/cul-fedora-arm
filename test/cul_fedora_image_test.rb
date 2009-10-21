@@ -1,7 +1,7 @@
 require 'test_helper'
 class CulFedoraImageTest < Test::Unit::TestCase
   include Cul::Fedora::Image
-  TEST = '../test'
+  TEST = 'test'
   CASE1 = "#{TEST}/fixtures/case1"
   CASE2 = "#{TEST}/fixtures/case2"
   CASE3 = "#{TEST}/fixtures/case3"
@@ -19,14 +19,18 @@ class CulFedoraImageTest < Test::Unit::TestCase
       @expected[:sampling_unit] = :cm
       @expected[:x_sampling] = 29
       @expected[:y_sampling] = 29
-      @expected    # @expected[:bitdepth] = 24
+      @expected
+    # @expected[:bitdepth] = 24
     end
     should "correctly identify properties" do
       actual = analyze_image(@src)
       actual
-      assert_equal @expected, actual    end
+      assert_equal @expected, actual
+    end
     teardown do
-          end  end
+      
+    end
+  end
 context "image library given a PNG" do
   setup do
     @src = "#{CASE3}/test001.png"

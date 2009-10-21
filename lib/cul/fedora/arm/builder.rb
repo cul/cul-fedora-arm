@@ -28,7 +28,7 @@ module Cul
         FOXML_BUILDER = FoxmlBuilder.new()
         # array of individual hash: each hash corresponds to a metadata or resource.
         
-        attr_reader :parts
+        attr_reader :parts, :connector
         
 
         # creates a Builder object. Can be used with no arguments, or with ONE of the following options
@@ -36,27 +36,17 @@ module Cul
         # [:header]:: designates for a template whether a header is specified
         # and one or more of the following:
         # [:host]:: designates a fedora host server name
-        # [:port]:: designates a fedora host port
+        # [:admin_port]:: designates a fedora host port for admin
+        # [:admin_ssl]:: designates whether ssl should be used
+        
         # [:user]:: designates a fedora user
         # [:pwd]:: designates a fedora user credential
         def initialize(*args)
           options = args.extract_options!
 
           @parts = []
-          host = options.delete(:host)
-          port = options.delete(:port)
-          user = options.delete(:user)
-          pwd = options.delete(:pwd)
+          @connector = options.delete(:connector)
           @namespace = options.delete(:ns)
-          if(host and port)
-            @endpoint = "http://#{host}:#{port}/fedora/services/management"
-            wsdl = "http://#{host}:#{port}/fedora/wsdl?api=API-M"
-            @apim = SOAP::WSDLDriverFactory.new(wsdl).create_rpc_driver
-            if (user and pwd)
-              @apim.options["protocol.http.basic_auth"]<<[@endpoint,user,pwd]
-            end
-          end
-          # TODO: add file option to avoid :template => File.open(file_name,"r")
           
           if (template = options.delete(:template)) || (file = options.delete(:file))
             template ||= File.open(file,"r")
@@ -100,7 +90,7 @@ module Cul
         def purge(pid)
           if(@apim)
             purge = Tasks::PurgeTask.new(pid)
-            purge.post(@apim)
+            purge.post(@connector)
           end
         end
         
@@ -123,19 +113,19 @@ module Cul
         def insert_aggregator(value_hash)
           data = FOXML_BUILDER.build(value_hash)
           task = Tasks::InsertFoxmlTask.new(data)
-          task.post(@apim)
+          task.post(@connector)
           task.response
         end
         def insert_metadata(value_hash)
           data = FOXML_BUILDER.build(value_hash)
           task = Tasks::InsertFoxmlTask.new(data)
-          task.post(@apim)
+          task.post(@connector)
           task.response
         end
         def insert_resource(value_hash)
           data = FOXML_BUILDER.build(value_hash)
           task = Tasks::InsertFoxmlTask.new(data)
-          task.post(@apim)
+          task.post(@connector)
           task.response
         end
        
@@ -155,7 +145,7 @@ module Cul
             end
           }
           task = Tasks::ReservePidsTask.new(missing,@namespace)
-          task.post(@apim)
+          task.post(@connector)
           pids = (missing == 1)? [task.response.pid]:task.response.pid
           # assign new pids
           parts.each { |part|

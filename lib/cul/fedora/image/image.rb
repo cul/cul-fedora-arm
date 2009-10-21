@@ -1,4 +1,5 @@
 require 'net/http'
+require 'net/https'
 require 'tempfile'
 require 'stringio'
 module Cul
@@ -46,7 +47,8 @@ module Cul
             when header[0..1].eql?(BITMAP):
               file.rewind()
               result.merge!(analyze_bitmap(file,debug))
-            when header[0..1].eql?(JPEG):              file.rewind()
+            when header[0..1].eql?(JPEG):
+              file.rewind()
               result.merge!(analyze_jpeg(file,debug))
             when header[0..3].eql?(TIFF_LE), header[0..3].eql?(TIFF_BE):
               file.rewind()
@@ -231,7 +233,8 @@ module Cul
                   file.seek(len,IO::SEEK_CUR)
                 end
               else
-                payload = nil?              end
+                payload = nil?
+              end
             end
             result
           end
