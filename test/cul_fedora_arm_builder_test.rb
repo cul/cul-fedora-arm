@@ -331,7 +331,7 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
           # get objects, verify properties
           if (@assigned)
             @connector.rest_interface do |http|
-              @assigned.each do |pid| 
+              @assigned.each { |pid| 
                 resp = http.head("/fedora/get/#{pid}/DC")
                 assert_equal "200", resp.code,  "#{pid}/DC not loaded correctly to repo at #{@connector.rest_location}... #{resp.code} #{resp.message} "
                 resp = http.get("/fedora/get/#{pid}/CONTENT")
@@ -349,7 +349,8 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
                 assert_equal "200", resp.code,  "#{pid}/RELS-EXT not loaded correctly to repo at #{@connector.rest_location}... #{resp.code} #{resp.message} "
                 rels = resp.body
                 assert rels.index("<dcmi:extent>15138</dcmi:extent>") > -1
-              end
+                http.finish()
+              }
             end
           end
         end
