@@ -88,7 +88,7 @@ module Cul
         end
         
         def purge(pid)
-          if(@apim)
+          if(@connector)
             purge = Tasks::PurgeTask.new(pid)
             purge.post(@connector)
           end

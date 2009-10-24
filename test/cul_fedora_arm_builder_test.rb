@@ -229,13 +229,10 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
 
           # get objects, verify properties
           if (@assigned)
-            host, port = @connector.config_for(:rest,:host),@connector.config_for(:rest, :port)
-            http = Net::HTTP.start(host, port)
-
             @connector.rest_interface do |http|
               @assigned.each { |pid| 
                 resp = http.head("/fedora/get/#{pid}/DC")
-                assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{host}:#{port}... #{resp.code} #{resp.message} "
+                assert_equal "200", resp.code,  "#{pid} not loaded correctly to repo at #{@connector.rest_location}... #{resp.code} #{resp.message} "
               }
             end
           end
@@ -327,7 +324,7 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
             }          
           end
           response = @builder.process_parts()
-
+          
           # get objects, verify properties
           if (@assigned)
             @connector.rest_interface do |http|
