@@ -182,7 +182,7 @@ module Cul
         def test_for_required_columns(value_hash)
           missing_values = REQUIRED_COLUMNS.select { |col| !value_hash.has_key?(col) || value_hash[col].nil? }
           if (value_hash.has_key?(:action) and value_hash[:action].eql?('update'))
-            raise "Update operations require a PID" unless (value_hash.has_key(:pid) and !value_hash[:pid].strip().eql?(''))
+            raise "Update operations require a PID" unless (value_hash.has_key?(:pid) and !value_hash[:pid].strip().eql?(''))
           end
           raise "Missing required values #{missing_values.join(",")}" unless missing_values.empty?
         end
