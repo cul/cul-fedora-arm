@@ -42,7 +42,7 @@ class CulFedoraArmBuilderTest < Test::Unit::TestCase
 
         assert_equal @builder_class::REQUIRED_COLUMNS, [:sequence]
         assert_equal @builder_class::MANDATORY_COLUMNS, [:sequence, :target, :model_type]
-        assert_equal @builder_class::VALID_COLUMNS, [:sequence, :target, :model_type, :source, :template_type, :dc_format, :id, :pid, :action, :license]
+        assert_equal @builder_class::VALID_COLUMNS, [:sequence, :target, :model_type, :source, :template_type, :dc_format, :title_attr, :mime, :id, :pid, :action, :license]
       end
 
       should "accept only options :template or :file" do

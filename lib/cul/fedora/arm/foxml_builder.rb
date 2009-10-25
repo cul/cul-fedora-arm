@@ -212,7 +212,7 @@ RESOURCE
           value_default_key = (template_type.downcase + "_" + model_type.downcase).intern
           subs = {}
           if(DEFAULTS.has_key?(value_default_key))
-            subs = value_hash.merge(DEFAULTS[value_default_key])
+            subs = DEFAULTS[value_default_key].merge(value_hash)
             now  = Time.now
             subs[:timestamp] = now.strftime("%Y-%m-%dT%H:%M:%S.000Z")
             subs[:rels] = build_rels(subs)

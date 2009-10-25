@@ -23,7 +23,7 @@ module Cul
         MANDATORY_COLUMNS = [:sequence, :target, :model_type]
         
         # list of columns which may have values
-        VALID_COLUMNS = [:sequence, :target, :model_type, :source, :template_type, :dc_format, :id, :pid, :action, :license]
+        VALID_COLUMNS = [:sequence, :target, :model_type, :source, :template_type, :dc_format, :title_attr, :mime, :id, :pid, :action, :license]
 
         FOXML_BUILDER = FoxmlBuilder.new()
         # array of individual hash: each hash corresponds to a metadata or resource.
@@ -128,6 +128,29 @@ module Cul
           task.post(@connector)
           task.response
         end
+        
+        def update_aggregator(value_hash)
+          self.purge(value_hash[:pid])
+          data = FOXML_BUILDER.build(value_hash)
+          task = Tasks::InsertFoxmlTask.new(data)
+          task.post(@connector)
+          task.response
+        end
+        def update_metadata(value_hash)
+          self.purge(value_hash[:pid])
+          data = FOXML_BUILDER.build(value_hash)
+          task = Tasks::InsertFoxmlTask.new(data)
+          task.post(@connector)
+          task.response
+        end
+        def update_resource(value_hash)
+          self.purge(value_hash[:pid])
+          data = FOXML_BUILDER.build(value_hash)
+          task = Tasks::InsertFoxmlTask.new(data)
+          task.post(@connector)
+          task.response
+        end
+        
        
         def reserve_pids(parts=@parts)
           assigned = []
