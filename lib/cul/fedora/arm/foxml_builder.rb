@@ -228,7 +228,13 @@ RESOURCE
                   subs[:metadata] = File.open(subs[:source]){|file| file.read() }
                   subs.merge!(parse_mods(subs[:metadata]))
                 end
-                subs[:source] = 'file:/' + Pathname.new(subs[:source]).realpath
+                realpath = ""
+                begin
+                  realpath = Pathname.new(subs[:source]).realpath
+                rescue
+                  realpath = subs[:source]
+                end
+                subs[:source] = 'file:/' + realpath
                 subs[:datastream_type] = 'E'
               else
                 subs[:datastream_type] = 'M'
