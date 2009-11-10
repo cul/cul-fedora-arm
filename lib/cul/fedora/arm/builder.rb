@@ -131,24 +131,15 @@ module Cul
         
         def update_aggregator(value_hash)
           self.purge(value_hash[:pid])
-          data = FOXML_BUILDER.build(value_hash)
-          task = Tasks::InsertFoxmlTask.new(data)
-          task.post(@connector)
-          task.response
+          insert_aggregator(value_hash)
         end
         def update_metadata(value_hash)
           self.purge(value_hash[:pid])
-          data = FOXML_BUILDER.build(value_hash)
-          task = Tasks::InsertFoxmlTask.new(data)
-          task.post(@connector)
-          task.response
+          insert_metadata(value_hash)
         end
         def update_resource(value_hash)
           self.purge(value_hash[:pid])
-          data = FOXML_BUILDER.build(value_hash)
-          task = Tasks::InsertFoxmlTask.new(data)
-          task.post(@connector)
-          task.response
+          insert_resource(value_hash)
         end
         
        

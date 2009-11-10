@@ -234,7 +234,7 @@ RESOURCE
                 rescue
                   realpath = subs[:source]
                 end
-                subs[:source] = 'file:/' + realpath
+                subs[:source] = 'file://' + realpath
                 subs[:datastream_type] = 'E'
               else
                 subs[:datastream_type] = 'M'
