@@ -23,7 +23,7 @@ module Cul
         MANDATORY_COLUMNS = [:sequence, :target, :model_type]
         
         # list of columns which may have values
-        VALID_COLUMNS = [:sequence, :target, :model_type, :source, :template_type, :dc_format, :title_attr, :mime, :id, :pid, :action, :license]
+        VALID_COLUMNS = [:sequence, :target, :model_type, :source, :template_type, :dc_format, :title_attr, :mime, :id, :pid, :action, :license, :resource_state]
 
         FOXML_BUILDER = FoxmlBuilder.new()
         # array of individual hash: each hash corresponds to a metadata or resource.
@@ -100,7 +100,7 @@ module Cul
             process(part_hash)
           }
         end
-        
+
         def process(value_hash)
           # part is a hash
           op = value_hash[:action] + "_" + value_hash[:model_type]
@@ -109,26 +109,29 @@ module Cul
           raise "Unknown operation #{op}" unless method(op)
           return method(op).call(value_hash) 
         end
-        
+
+        def data(value_hash)
+          FOXML_BUILDER.build(value_hash)
+        end
         def insert_aggregator(value_hash)
-          data = FOXML_BUILDER.build(value_hash)
+          data = data(value_hash)
           task = Tasks::InsertFoxmlTask.new(data)
           task.post(@connector)
           task.response
         end
         def insert_metadata(value_hash)
-          data = FOXML_BUILDER.build(value_hash)
+          data = data(value_hash)
           task = Tasks::InsertFoxmlTask.new(data)
           task.post(@connector)
           task.response
         end
         def insert_resource(value_hash)
-          data = FOXML_BUILDER.build(value_hash)
+          data = data(value_hash)
           task = Tasks::InsertFoxmlTask.new(data)
           task.post(@connector)
           task.response
         end
-        
+
         def update_aggregator(value_hash)
           self.purge(value_hash[:pid])
           insert_aggregator(value_hash)
@@ -170,6 +173,10 @@ module Cul
               end
             end
           }
+          map_pids(parts)
+          assigned
+        end
+        def map_pids(parts=@parts)
           # make substitutions in target values
           parts.each { |part|
             if(part.has_key?(:target))
@@ -184,7 +191,7 @@ module Cul
               part[:target] = targets.join(';')
             end
           }
-          assigned
+          parts
         end
 
 

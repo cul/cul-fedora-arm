@@ -34,6 +34,31 @@ module Cul
             @args = {:pid=>pid,:force=>'false',:logMessage=>'purging test objects'}
           end
         end
+
+        class ModifyDatastreamState < Task
+          def initialize(pid, dsID, dsState, logMessage)
+            super()
+            @apim = :setDatastreamState
+            @args = { :pid=>pid, :dsState=>dsState, :dsID=>dsID, :logMessage=>logMessage }
+          end
+        end
+
+        class ObjectXML < Task
+          def initialize(pid)
+            super()
+            @apim = :getObjectXML
+            @args = { :pid=>pid }
+          end
+        end
+
+        class ModifyObject < Task
+          def initialize(pid, state, label, ownerId, logMessage)
+            super()
+            @apim = :modifyObject
+            @args = { :pid=>pid, :state=>state, :label=>label, :ownerId=>ownerId, :logMessage=>logMessage }
+          end
+        end
+
         class ReservePidsTask < Task
           def initialize(numPids, namespace="demo")
             super()

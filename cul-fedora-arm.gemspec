@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{cul-fedora-arm}
-  s.version = "0.6.0"
+  s.version = "0.7.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["James Stuart"]
@@ -68,26 +68,30 @@ Gem::Specification.new do |s|
      "test/test_helper.rb"
   ]
 
+  _development_deps = {
+    %q<thoughtbot-shoulda> => [">= 0"],
+    %q<thoughtbot-factory_girl> => [">= 0"]
+  }
+  _runtime_deps = {
+    %q<activesupport> => [">= 0"],
+    %q<ruby-fedora> => [">= 0"],
+    %q<i18n> => ["< 0.7.0"]
+  }
+  _dev_method = :add_dependency
+  _rt_method = :add_dependency 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
-
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
-      s.add_development_dependency(%q<thoughtbot-shoulda>, [">= 0"])
-      s.add_development_dependency(%q<thoughtbot-factory_girl>, [">= 0"])
-      s.add_runtime_dependency(%q<activesupport>, [">= 0"])
-      s.add_runtime_dependency(%q<ruby-fedora>, [">= 0"])
-    else
-      s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
-      s.add_dependency(%q<thoughtbot-factory_girl>, [">= 0"])
-      s.add_dependency(%q<activesupport>, [">= 0"])
-      s.add_dependency(%q<ruby-fedora>, [">= 0"])
+      _dev_method = :add_development_dependency
+      _rt_method = :add_runtime_dependency
     end
-  else
-    s.add_dependency(%q<thoughtbot-shoulda>, [">= 0"])
-    s.add_dependency(%q<thoughtbot-factory_girl>, [">= 0"])
-    s.add_dependency(%q<activesupport>, [">= 0"])
-    s.add_dependency(%q<ruby-fedora>, [">= 0"])
+  end
+  _development_deps.each do |k,v|
+    s.send(_dev_method,k, v)
+  end
+  _runtime_deps.each do |k,v|
+    s.send(_rt_method,k, v)
   end
 end
 
