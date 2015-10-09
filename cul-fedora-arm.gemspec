@@ -75,6 +75,7 @@ Gem::Specification.new do |s|
   _runtime_deps = {
     %q<activesupport> => [">= 0"],
     %q<ruby-fedora> => [">= 0"],
+    %q<soap4r-ruby1.9> => [">= 0"],
     %q<i18n> => ["< 0.7.0"]
   }
   _dev_method = :add_dependency
