@@ -1,4 +1,4 @@
-
+# coding: utf-8
 module Cul
   module Fedora
     module Arm
@@ -8,7 +8,7 @@ module Cul
       # Authors::  James Stuart (mailto:james.stuart at columbia.edu), Benjamin Armintor (mailto: ba2213 at columbia.edu)
       # License::
       # Dependencies:: activesupport 
-      
+
       class Builder
 
         # TODO: abstract this to allow for multiple patterns

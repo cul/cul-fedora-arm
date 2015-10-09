@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'base64'
 require 'net/http'
 require 'net/https'

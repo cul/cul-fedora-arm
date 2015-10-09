@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'cul/fedora/image/image'
 require 'pathname'
 require 'rexml/document'

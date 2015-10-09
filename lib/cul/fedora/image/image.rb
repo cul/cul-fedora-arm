@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'net/http'
 require 'net/https'
 require 'tempfile'
@@ -44,19 +45,19 @@ module Cul
               header.push(file.getc())
             }  
             case
-            when header[0..1].eql?(BITMAP):
+            when header[0..1].eql?(BITMAP)
               file.rewind()
               result.merge!(analyze_bitmap(file,debug))
-            when header[0..1].eql?(JPEG):
+            when header[0..1].eql?(JPEG)
               file.rewind()
               result.merge!(analyze_jpeg(file,debug))
-            when header[0..3].eql?(TIFF_LE), header[0..3].eql?(TIFF_BE):
+            when header[0..3].eql?(TIFF_LE) || header[0..3].eql?(TIFF_BE)
               file.rewind()
               result.merge!(analyze_tiff(file,debug))
-            when header[0..3].eql?(GIF):
+            when header[0..3].eql?(GIF)
               file.rewind()
               result.merge!(analyze_gif(file,debug))
-            when header.eql?(PNG):
+            when header.eql?(PNG)
               file.rewind()
               result.merge!(analyze_png(file,debug))
             else
@@ -120,7 +121,7 @@ module Cul
                 length = len_bytes.unpack('N')[0]
                 ctype = file.read(4)
                 case
-                when 'pHYs'.eql?(ctype):
+                when 'pHYs'.eql?(ctype)
                   val = file.read(length)
                   xsam = val[0..3].unpack('N')[0]
                   ysam = val[4..7].unpack('N')[0]
@@ -133,7 +134,7 @@ module Cul
                   result[:x_sampling] = xsam
                   result[:y_sampling] = ysam
                   file.seek(4,IO::SEEK_CUR)
-                when 'IHDR'.eql?(ctype):
+                when 'IHDR'.eql?(ctype)
                   val = file.read(length)
                   result[:width] = val[0..3].unpack('N')[0]                  
                   result[:length] = val[4..7].unpack('N')[0]                  
@@ -200,12 +201,12 @@ module Cul
             result = {:mime => 'image/jpeg'}
             while ((header = file.read(2)) and not "\xff\xd9".eql?(header))
               case
-              when 0xdd.eql?(header[1]):
+              when 0xdd.eql?(header[1])
                 payload = nil
                 file.seek(2,IO::SEEK_CUR)
-              when JPEG_APP.member?(header[1]), JPEG_VARIABLE_PAYLOAD.member?(header[1]):
+              when JPEG_APP.member?(header[1]) || JPEG_VARIABLE_PAYLOAD.member?(header[1])
                 len = file.read(2).unpack('n')[0]
-                if ("\xff\xe0".eql?(header)): # APP0 segment - JFIF
+                if ("\xff\xe0".eql?(header)) # APP0 segment - JFIF
                   puts "JFIF file segment detected" if debug
                   payload = file.read(len)
                   id = payload[0..4]
@@ -215,10 +216,12 @@ module Cul
                   y_sample = payload[10..11].unpack('n')[0]
                   result[:x_sampling] = x_sample
                   result[:y_sampling] = y_sample
-                  if (unit == "\x01"): result[:sampling_unit] = :inch
-                  elsif (unit == "\x02"): result[:sampling_unit] = :cm
+                  if (unit == "\x01")
+                    result[:sampling_unit] = :inch
+                  elsif (unit == "\x02")
+                    result[:sampling_unit] = :cm
                   end
-                elsif ("\xff\xe1".eql?(header)): # APP1 segment - EXIF
+                elsif ("\xff\xe1".eql?(header)) # APP1 segment - EXIF
                   puts "EXIF file segment detected" if debug
                   payload = file.read(len)
                   result.merge!(analyze_exif(StringIO.new(payload),0,false,debug))
@@ -268,7 +271,7 @@ module Cul
                 values = []
                 if (1 <= ttype and ttype <= 5 and numValues > 0)
                   case
-                  when ttype == 1: # unsigned bytes
+                  when ttype == 1 # unsigned bytes
                     if (numValues > 4)
                       file.seek(valueOffset,IO::SEEK_SET)
                       values = file.read(numValues)
@@ -277,7 +280,7 @@ module Cul
                     end
                     values = values.unpack('C*')
                   
-                  when ttype == 2:
+                  when ttype == 2
                     if (numValues > 4)
                       file.seek(valueOffset,IO::SEEK_SET)
                       values = file.read(numValues)
@@ -288,7 +291,7 @@ module Cul
                     values.collect! {|c|
                       c.to_chr
                     }
-                  when ttype == 3:
+                  when ttype == 3
                     if (numValues > 2)
                       file.seek(valueOffset,IO::SEEK_SET)
                       values = file.read(numValues * 2)
@@ -296,7 +299,7 @@ module Cul
                       values = valueOffsetBytes
                     end
                     values = littleEndian ? values.unpack('v*'):values.unpack('n*')
-                  when ttype == 4:
+                  when ttype == 4
                     if (numValues > 1)
                       file.seek(valueOffset,IO::SEEK_SET)
                       values = file.read(numValues * 4)
@@ -304,11 +307,11 @@ module Cul
                       values = valueOffsetBytes
                     end
                     values = littleEndian ? values.unpack('V*'):values.unpack('N*')
-                  when ttype == 5:
+                  when ttype == 5
                     # RATIONAL: a sequence of pairs of 32-bit integers, numerator and denominator
                     file.seek(valueOffset,IO::SEEK_SET)
                     values = file.read(numValues * 8)
-                    if(values.length % 8) != 0:
+                    if ((values.length % 8) != 0)
                       raise "Unexpected end of bytestream when reading EXIF data"
                     end
                     values = littleEndian ? values.unpack('V*'):values.unpack('N*')
@@ -316,7 +319,8 @@ module Cul
                       values[ix].quo(values[(ix)+1])
                     }
                   else
-                    if debug: puts "Unknown tag type: #{ttype}"
+                    if debug
+                      puts "Unknown tag type: #{ttype}"
                     end
                   end
                 entries[tag] = values
